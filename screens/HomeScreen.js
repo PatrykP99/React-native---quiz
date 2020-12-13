@@ -21,12 +21,6 @@ export default class HomeScreen extends React.Component {
                     <View>
                         <TestShortcutTemplate navigation={() => {this.props.navigation.navigate('Test #1')}} titleText={"Title test #1"}
                                               tagsText={"#tag1 #tag2"} descriptionText={lorem}/>
-                        <TestShortcutTemplate navigation={() => {this.props.navigation.navigate('Test #1')}} titleText={"Title test #2"}
-                                              tagsText={"#tag3 #tag4"} descriptionText={lorem}/>
-                        <TestShortcutTemplate navigation={() => {this.props.navigation.navigate('Test #1')}} titleText={"Title test #3"}
-                                              tagsText={"#tag5 #tag6"} descriptionText={lorem}/>
-                        <TestShortcutTemplate navigation={() => {this.props.navigation.navigate('Test #1')}} titleText={"Title test #4"}
-                                              tagsText={"#tag7 #tag8"} descriptionText={lorem}/>
                     </View>
                 </ScrollView>
                 <View style={styles.getResultView}>
