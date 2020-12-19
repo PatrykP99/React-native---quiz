@@ -1,73 +1,29 @@
 import React, {Component} from 'react';
-import {StyleSheet, View, FlatList, RefreshControl } from 'react-native';
+import {StyleSheet, View, FlatList, RefreshControl, ProgressBarAndroid} from 'react-native';
 import {Table, Row} from 'react-native-table-component';
 import { Toolbar } from '../components/Toolbar';
-
-const result =[
-    {
-        'nick': 'nick1',
-        'score': 2,
-        'total': 20,
-        'type': 'test1',
-        'date': '12-09-2020'
-    },
-    {
-        'nick': 'nick2',
-        'score': 3,
-        'total': 20,
-        'type': 'test1',
-        'date': '12-09-2020'
-    },
-    {
-        'nick': 'nick3',
-        'score': 6,
-        'total': 20,
-        'type': 'test1',
-        'date': '12-09-2020'
-    },
-    {
-        'nick': 'nick4',
-        'score': 7,
-        'total': 20,
-        'type': 'test1',
-        'date': '12-09-2020'
-    },
-    {
-        'nick': 'nick5',
-        'score': 6,
-        'total': 20,
-        'type': 'test1',
-        'date': '12-09-2020'
-    },
-    {
-        'nick': 'nick6',
-        'score': 6,
-        'total': 20,
-        'type': 'test1',
-        'date': '12-09-2020'
-    },
-    {
-        'nick': 'nick7',
-        'score': 6,
-        'total': 20,
-        'type': 'test1',
-        'date': '12-09-2020'
-    },
-    {
-        'nick': 'nick8',
-        'score': 6,
-        'total': 20,
-        'type': 'test1',
-        'date': '12-09-2020'
-    }
-]
-
 
 export default class ResultsScreen extends Component {
     constructor() {
         super();
 
-        this.state = {refreshing: false, setRefreshing: false,}
+        this.state = {refreshing: false, setRefreshing: false, results: [], isLoading: true}
+    }
+
+    fetchJson = () => {
+        fetch('http://tgryl.pl/quiz/results')
+            .then((response) => response.json())
+            .then((json) => {
+                this.setState({ results: json.reverse()});
+            })
+            .catch((error) => console.error(error))
+            .finally(() => {
+                this.setState({ isLoading: false });
+            });
+    }
+
+   componentDidMount() {
+        this.fetchJson()
     }
 
     wait = (timeout) => {
@@ -78,29 +34,41 @@ export default class ResultsScreen extends Component {
 
     onRefresh = () => {
         this.setState({setRefreshing: true})
-        this.wait(2000).then(() => this.setState({setRefreshing: false}));
+        this.wait(500).then(() =>{
+            this.fetchJson()
+            this.setState({setRefreshing: false})});
     }
 
     item = ({item}) => {
+        if(item.type.toString().includes(',')){
+            item.type = item.type.toString().replace(',','\n')
+        }
+        if(item.date === undefined){
+            item.date = item.createdOn.toString().slice(0,10)
+        }
         return <Row data={[item.nick, item.score + '/' + item.total, item.type, item.date]}
-                    textStyle={styles.text} style={styles.row} borderStyle={{borderWidth: 1}}/>
+                    textStyle={[styles.text, {fontFamily: 'raleway-medium'}]} style={styles.row} borderStyle={{borderWidth: 1}}/>
     }
 
+
     render() {
+        const { results, isLoading } = this.state;
         return (
             <View style={styles.container} >
                 <Toolbar navigation={() => {this.props.navigation.openDrawer()}} text="Result"/>
-                <View style={{marginBottom: 40, marginHorizontal: 23, flex: 1}} >
-                    <Table borderStyle={{borderWidth: 1, borderColor: '#000'}} >
-                        <Row data={['Nick', 'Point', 'Type', 'Date']} style={styles.header} textStyle={styles.text}/>
+               <View style={{marginBottom: 40, marginHorizontal: 23, flex: 1}}>
+                    <Table borderStyle={{borderWidth: 1, borderColor: '#000'}}>
+                        <Row data={['Nick', 'Point', 'Type', 'Date']} style={styles.header} textStyle={[styles.text, {fontFamily: 'roboto-medium'}]}/>
                     </Table>
-                    <Table style = {{borderWidth: 1, marginTop: -1}}>
-                            <FlatList data={result}
-                                      renderItem={this.item}
-                                      keyExtractor={(item, index) => index.toString()}
-                                      refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh}/>}
-                            />
+                   {isLoading ? <ProgressBarAndroid progress={1}/> :
+                       <Table style={{borderWidth: 1, marginTop: -1}}>
+                        <FlatList data={results}
+                                  renderItem= {this.item}
+                                  keyExtractor={(item, index) => index.toString()}
+                                  refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh}/>}
+                        />
                     </Table>
+                       }
                 </View>
             </View>
         )

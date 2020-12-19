@@ -1,8 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet, TouchableOpacity, View, Image } from 'react-native';
 
-
-
 const Toolbar = (props) => {
     const { text, navigation } = props
     return(
@@ -19,17 +17,18 @@ const styles = StyleSheet.create({
     toolbarView:{
         paddingVertical: 20,
         flexDirection: 'row',
-        justifyContent:'center',
+        justifyContent:'space-between',
         marginBottom: 50,
         backgroundColor: '#E8E8E8',
+        flexWrap: 'wrap'
     },
     toolbarText:{
-        fontSize: 35,
-        marginTop: 25,
-        marginRight: 70,
+        fontSize: 30,
+        paddingVertical: 20,
+        width: 1,
         flexGrow: 1,
-        textAlign: 'center'
-
+        fontFamily: 'roboto-medium',
+        textAlign: 'center',
     },
     toolbarButton:{
         fontSize:24,

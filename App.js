@@ -6,6 +6,7 @@ import HomeScreen from './screens/HomeScreen';
 import ResultsScreen from './screens/ResultScreen';
 import TestScreen from './screens/TestScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Font from 'expo-font';
 
 const Drawer = createDrawerNavigator();
 
@@ -29,10 +30,17 @@ const Drawer = createDrawerNavigator();
 
 export default class App extends React.Component {
     state = {
-        rulesVisible: false
+        rulesVisible: false,
+        assetsLoaded: false
     }
 
-    componentDidMount() {
+      componentDidMount() {
+        Font.loadAsync({
+            'roboto-medium': require('./assets/fonts/Roboto-Medium.ttf'),
+            'raleway-medium': require('./assets/fonts/Raleway-Medium.ttf')
+        }).then(r => {
+             this.setState({ assetsLoaded: true });
+         })
         getData().then(r => {
             if (r !== 'cdda') {
                 this.setState({rulesVisible:true})
@@ -72,8 +80,8 @@ export default class App extends React.Component {
                     }}
                 >
                     <Drawer.Screen name="Home" component={HomeScreen}/>
-                    <Drawer.Screen name="Result" component={ResultsScreen}/>
-                    <Drawer.Screen name="Test #1" component={TestScreen} options={{unmountOnBlur:true}}/>
+                    <Drawer.Screen name="Result" component={ResultsScreen} options={{unmountOnBlur:true}}/>
+                    <Drawer.Screen name="Test" component={TestScreen} options={{unmountOnBlur:true}}/>
                 </Drawer.Navigator>
             </NavigationContainer>
         );

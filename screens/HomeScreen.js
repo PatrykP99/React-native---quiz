@@ -7,26 +7,43 @@ export default class HomeScreen extends React.Component {
     constructor() {
         super();
 
+        this.state = {tests: [], isLoading: true, assetsLoaded: false}
+    }
+
+    fetchJson = () => {
+        fetch('http://tgryl.pl/quiz/tests')
+            .then((response) => response.json())
+            .then((json) => {
+                this.setState({ tests: json });
+            })
+            .catch((error) => console.error(error))
+            .finally(() => {
+                this.setState({ isLoading: false });
+            });
+    }
+
+    async  componentDidMount() {
+        this.fetchJson()
+
     }
 
     render() {
-        const lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore " +
-            "et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea " +
-            "commodo consequat. Duis aute irure dolor  in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. " +
-            "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+        const { tests } = this.state;
         return (
             <View style={styles.container}>
                 <Toolbar navigation={() => {this.props.navigation.openDrawer()}} text="Home"/>
                 <ScrollView>
                     <View>
-                        <TestShortcutTemplate navigation={() => {this.props.navigation.navigate('Test #1')}} titleText={"Title test #1"}
-                                              tagsText={"#tag1 #tag2"} descriptionText={lorem}/>
+                        {tests.map((item, key) =>
+                            <TestShortcutTemplate navigation={() => {this.props.navigation.navigate('Test', {id: item.id, title: item.name})}} titleText={item.name}
+                                                   tagsText={item.tags} descriptionText={item.description} index={key}/>
+                        )}
                     </View>
                 </ScrollView>
                 <View style={styles.getResultView}>
                     <Text style={styles.textResult}>Get to know your ranking result</Text>
                     <TouchableOpacity style={styles.buttonResult} onPress={() => this.props.navigation.navigate('Result')}>
-                        <Text>Check!</Text>
+                        <Text style={{fontFamily: 'raleway-medium'}}>Check!</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -50,6 +67,7 @@ const styles = StyleSheet.create({
     },
     textResult: {
         fontSize: 20,
+        fontFamily: 'roboto-medium'
     },
     buttonResult: {
         marginTop: 25,

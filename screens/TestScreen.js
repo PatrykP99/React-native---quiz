@@ -1,97 +1,6 @@
 import React from 'react';
-import {ProgressBarAndroid, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {ProgressBarAndroid, StyleSheet, Text, TouchableOpacity, View, TextInput} from 'react-native';
 import {Toolbar} from "../components/Toolbar";
-
-const tasks = [
-    {
-        "question": "Pytanie 1 Odpowiedz A ?",
-        "answers": [
-            {
-                "content": "A",
-                "isCorrect": true
-            },
-            {
-                "content": "B",
-                "isCorrect": false
-            },
-            {
-                "content": "C",
-                "isCorrect": false
-            },
-            {
-                "content": "D",
-                "isCorrect": false
-            }
-        ],
-        "duration": 10
-    },
-    {
-        "question": "Pytanie 2 Odpowiedz B ?",
-        "answers": [
-            {
-                "content": "A",
-                "isCorrect": false
-            },
-            {
-                "content": "B",
-                "isCorrect": true
-            },
-            {
-                "content": "C",
-                "isCorrect": false
-            },
-            {
-                "content": "D",
-                "isCorrect": false
-            }
-        ],
-        "duration": 10
-    },
-    {
-        "question": "Pytanie 3 Odpowiedz C ?",
-        "answers": [
-            {
-                "content": "A",
-                "isCorrect": false
-            },
-            {
-                "content": "B",
-                "isCorrect": false
-            },
-            {
-                "content": "C",
-                "isCorrect": true
-            },
-            {
-                "content": "D",
-                "isCorrect": false
-            }
-        ],
-        "duration": 10
-    },
-    {
-        "question": "Pytanie 4 Odpowiedz C ?",
-        "answers": [
-            {
-                "content": "A",
-                "isCorrect": false
-            },
-            {
-                "content": "B",
-                "isCorrect": false
-            },
-            {
-                "content": "C",
-                "isCorrect": true
-            },
-            {
-                "content": "D",
-                "isCorrect": false
-            }
-        ],
-        "duration": 10
-    },
-]
 
 export default class TestScreen extends React.Component {
     state = {
@@ -102,13 +11,42 @@ export default class TestScreen extends React.Component {
         },
         points: 0,
         position: 0,
-        duration: 10,
+        duration: 100,
         bar: 1,
-        barStatus: 0
+        barStatus: 0,
+        id: this.props.route.params.id,
+        title: this.props.route.params.title,
+        description: '',
+        text: '',
+        tasks: [{
+            question: "",
+            answers: [
+                {
+                    content: "",
+                    isCorrect: false
+                },
+                {
+                    content: "",
+                    isCorrect: false
+                },
+                {
+                    content: "",
+                    isCorrect: false
+                },
+                {
+                    content: "",
+                    isCorrect: false
+                },
+            ],
+            duration: 100
+        },]
     }
 
 
     componentDidMount() {
+
+        this.setState({ isLoading: true })
+        this.fetchJson()
         if (this.state.viewVisible) {
             this.taskDisplay()
             this.interval = setInterval(() => this.setState((prevState) => ({
@@ -116,6 +54,19 @@ export default class TestScreen extends React.Component {
                 bar: prevState.bar - this.state.barStatus
             })), 1000);
         }
+    }
+
+    fetchJson = () => {
+        fetch('http://tgryl.pl/quiz/test/' + this.props.route.params.id)
+            .then((response) => response.json())
+            .then((json) => {
+                this.state.tasks = json.tasks
+                this.setState({description: json.description})})
+            .then(() => this.taskDisplay())
+            .catch((error) => console.error(error))
+            .finally(() => {
+                this.setState({ isLoading: false });
+            });
     }
 
     componentWillUnmount() {
@@ -133,6 +84,7 @@ export default class TestScreen extends React.Component {
     }
 
     taskDisplay = () => {
+        const {tasks} = this.state
         this.setState({
             task: {
                 questions: tasks[this.state.position].question,
@@ -161,13 +113,13 @@ export default class TestScreen extends React.Component {
     }
 
     questionHandler = async (key) => {
-        const {position} = this.state
+        const {position, tasks} = this.state
         if (position < tasks.length - 1) {
             await this.questionCheck(key)
             this.setState({
                 position: position + 1,
                 bar: 1,
-                duration: 10
+                duration: 30,
             })
         } else {
             await this.questionCheck(key)
@@ -175,18 +127,34 @@ export default class TestScreen extends React.Component {
         }
     }
 
+    postResult = () => {
+        const {text, points, title, tasks} = this.state
+        let {navigation} = this.props;
+        const data = {
+            nick: text,
+            score: points,
+            total: tasks.length,
+            type: title
+        }
+
+        fetch('http://tgryl.pl/quiz/result', {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify((data))
+            });
+        navigation.navigate("Home")
+    }
 
     render() {
-        const lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore " +
-            "et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea " +
-            "commodo consequat. Duis aute irure dolor  in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. " +
-            "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-        const {viewVisible, task, points, position, duration, bar} = this.state
+        const {viewVisible, task, points, position, duration, bar, title, description, tasks} = this.state
         const {navigation} = this.props
 
         return (
             <View style={styles.container}>
-                <Toolbar navigation={() => {navigation.openDrawer()}} text={"Test #1"}/>
+                <Toolbar navigation={() => {navigation.openDrawer()}} text={title}/>
                 {viewVisible && <View style={{alignContent: 'center'}}>
                     <View style={styles.rowDirect}>
                         <Text style={styles.firstText}>Question {position + 1} of {tasks.length}</Text>
@@ -196,7 +164,7 @@ export default class TestScreen extends React.Component {
                                         style={styles.progressBar}
                     />
                     <Text style={styles.questionText}>{task.questions}</Text>
-                    <Text style={styles.loremText} numberOfLines={2}>{lorem}</Text>
+                    <Text style={styles.descriptionText} numberOfLines={2}>{description}</Text>
                     <View style={styles.answersView}>
                         <View style={[styles.rowDirect, {marginVertical: 20}]}>
                             {task.answer.map((item, key) => {
@@ -210,10 +178,13 @@ export default class TestScreen extends React.Component {
                         </View>
                     </View>
                 </View>}
-                {!viewVisible && <View style={{alignItems: 'center', paddingTop: 200}}>
-                    <Text style={{fontSize: 30}}>Uzyskałeś {points} na {tasks.length}</Text>
-                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Home")}>
-                        <Text>Powrot do menu</Text>
+                {!viewVisible && <View style={{alignItems: 'center', paddingTop: 45}}>
+                    <Text style={{fontSize: 30, fontFamily: 'roboto-medium'}}>You scored {points} / {tasks.length} points </Text>
+                    <Text style={{fontSize: 30, marginTop: 20, fontFamily: 'raleway-medium'}}>Share your result!</Text>
+                    <TextInput  style={{height: 40,backgroundColor: 'azure', fontSize: 20, marginTop: 20, fontFamily: 'raleway-medium'}}
+                                placeholder="Enter your nickname" onChangeText={(text) => this.setState({text})}/>
+                    <TouchableOpacity style={styles.backButton} onPress={() => this.postResult()}>
+                        <Text style={{fontSize: 20, textAlign: 'center', fontFamily: 'raleway-medium'}}>Send</Text>
                     </TouchableOpacity>
                 </View>}
             </View>
@@ -234,7 +205,8 @@ const styles = StyleSheet.create({
     },
     firstText: {
         paddingHorizontal: 20,
-        fontSize: 21
+        fontSize: 21,
+        fontFamily: 'roboto-medium'
     },
     progressBar: {
         margin: 20
@@ -242,11 +214,14 @@ const styles = StyleSheet.create({
     questionText: {
         fontSize: 27,
         textAlign: 'center',
+        fontFamily: 'roboto-medium',
     },
-    loremText: {
+    descriptionText: {
+        textAlign: 'center',
         marginTop: 35,
         marginHorizontal: 20,
         fontSize: 13,
+        fontFamily: 'raleway-medium'
     },
     answersView: {
         marginVertical: 35,
@@ -258,7 +233,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#E8E8E8',
     },
     answerText: {
-        fontSize: 15,
+        fontSize: 12,
+        textAlign: 'center',
+        fontFamily: 'raleway-medium',
     },
     answerTouchable: {
         borderWidth: 1,
@@ -274,6 +251,8 @@ const styles = StyleSheet.create({
     },
     backButton: {
         backgroundColor: "lightgrey",
+        width: 100,
+        height: 50,
         borderRadius: 7,
         padding: 10,
         marginTop: 20,
