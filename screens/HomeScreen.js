@@ -2,29 +2,41 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Toolbar } from "../components/Toolbar";
 import { TestShortcutTemplate } from "../components/TestShortcutTemplate";
+import _ from 'lodash'
+import {getData} from "../utils/Storage";
+import NetInfo from "@react-native-community/netinfo";
 
 export default class HomeScreen extends React.Component {
-    constructor() {
-        super();
-
-        this.state = {tests: [], isLoading: true, assetsLoaded: false}
+    state = {
+        tests: [],
+        isLoading: true,
+        assetsLoaded: false,
+        isConnected: false
     }
+    network;
 
-    fetchJson = () => {
-        fetch('http://tgryl.pl/quiz/tests')
-            .then((response) => response.json())
-            .then((json) => {
-                this.setState({ tests: json });
-            })
-            .catch((error) => console.error(error))
-            .finally(() => {
-                this.setState({ isLoading: false });
-            });
-    }
+    // fetchJson = () => {
+    //
+    //     fetch('http://tgryl.pl/quiz/tests')
+    //         .then((response) => response.json())
+    //         .then((json) => {
+    //             this.setState({ tests: _.shuffle(json) });
+    //             storeData(JSON.stringify(json), "tests").then(r => {})
+    //         })
+    //         .catch((error) => console.error(error))
+    //         .finally(() => {
+    //             this.setState({ isLoading: false });
+    //         });
+    // }
 
-    async  componentDidMount() {
-        this.fetchJson()
+    componentDidMount() {
+        this.network = NetInfo.addEventListener(state => {
+            this.setState({isConnected: state.isConnected})
+        })
 
+        getData("tests").then(r => {
+            this.setState({tests: _.shuffle(JSON.parse(r))})
+        })
     }
 
     render() {
@@ -32,11 +44,14 @@ export default class HomeScreen extends React.Component {
         return (
             <View style={styles.container}>
                 <Toolbar navigation={() => {this.props.navigation.openDrawer()}} text="Home"/>
+                {!this.state.isConnected && (<View style={styles.noNetwork}>
+                    <Text style={styles.textNetwork}>No network</Text>
+                </View>)}
                 <ScrollView>
                     <View>
                         {tests.map((item, key) =>
                             <TestShortcutTemplate navigation={() => {this.props.navigation.navigate('Test', {id: item.id, title: item.name})}} titleText={item.name}
-                                                   tagsText={item.tags} descriptionText={item.description} index={key}/>
+                                                   tagsText={item.tags} descriptionText={item.description} key={key}/>
                         )}
                     </View>
                 </ScrollView>
@@ -77,5 +92,15 @@ const styles = StyleSheet.create({
         backgroundColor: "lightgrey",
         paddingVertical: 15,
         paddingHorizontal: 80
+    },
+    noNetwork: {
+        backgroundColor: "#FFFF00",
+        marginBottom: 20,
+        paddingTop:10,
+        alignItems: 'center',
+    },
+    textNetwork: {
+        color: '#FF0000',
+        paddingBottom:10,
     }
 });

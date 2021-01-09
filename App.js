@@ -1,59 +1,96 @@
 import React from 'react';
-import { createDrawerNavigator, DrawerItemList, DrawerContentScrollView } from '@react-navigation/drawer';
+import { createDrawerNavigator, DrawerItem, DrawerContentScrollView } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
-import { StyleSheet, Image, View, Text, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, Image, View, Text, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import ResultsScreen from './screens/ResultScreen';
 import TestScreen from './screens/TestScreen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
+import _ from "lodash";
+import {getData, storeData} from "./utils/Storage";
+import NetInfo from "@react-native-community/netinfo";
 
 const Drawer = createDrawerNavigator();
-
-    const getData = async () => {
-    try {
-        const value = await AsyncStorage.getItem('@storage_Key')
-        if (value !== null) {
-            return value
-        }
-    } catch (e) {
-        return "error"
-    }
-}
-    const storeData = async (value) => {
-    try {
-        await AsyncStorage.setItem('@storage_Key', value)
-    } catch (e) {
-    }
-}
-
 
 export default class App extends React.Component {
     state = {
         rulesVisible: false,
-        assetsLoaded: false
+        assetsLoaded: false,
+        quizList: [],
+        testIds: []
     }
+    network;
 
-      componentDidMount() {
+    componentDidMount() {
         Font.loadAsync({
             'roboto-medium': require('./assets/fonts/Roboto-Medium.ttf'),
             'raleway-medium': require('./assets/fonts/Raleway-Medium.ttf')
         }).then(r => {
-             this.setState({ assetsLoaded: true });
-         })
-        getData().then(r => {
+            this.setState({assetsLoaded: true});
+        })
+
+        this.network = NetInfo.addEventListener(state => {
+            this.setState({isConnected: state.isConnected})
+        })
+
+        getData("tests").then(r => {
+            this.setState({quizList: JSON.parse(r)})
+        })
+
+        getData("rules").then(r => {
             if (r !== 'cdda') {
-                this.setState({rulesVisible:true})
+                this.setState({rulesVisible: true})
             }
         })
     }
 
+    fetchJson = () => {
+        let ids = []
+        const { isConnected, quizList } = this.state;
+        if(isConnected === true) {
+            fetch('http://tgryl.pl/quiz/tests')
+                .then((response) => response.json())
+                .then((json) => {
+                    storeData(JSON.stringify(json), "tests").then(r => {
+                        this.setState({quizList: _.shuffle(json)})
+                    })
+                    ids = quizList.map((item) => item.id)
+                })
+                .then(() => {
+                    this.fetchSimpleTest(ids)
+                })
+                .catch((error) => console.error(error))
+        }
+    }
+
+    fetchSimpleTest = (ids) =>{
+        ids.map((item) =>
+            fetch('http://tgryl.pl/quiz/test/' + item)
+                .then((response) => response.json())
+                .then((json) => {
+                    storeData(JSON.stringify(json), item).then(r => {
+                    })
+                 })
+                .catch((error) => console.error(error))
+        )
+    }
+
     acceptRules = () => {
-        storeData('cdda')
-            .then(() => this.setState({rulesVisible: false}));
+        storeData('cdda', "rules")
+            .then(() => this.setState({rulesVisible: false}))
+    }
+
+    generateTest = (props) => {
+        const { quizList } = this.state;
+        let simpleTest = _.shuffle(quizList)
+        simpleTest = simpleTest[0]
+        props.navigate('Test', {id: simpleTest.id, title: simpleTest.name})
     }
 
     render() {
+        if (!this.state.assetsLoaded) {
+            return <ActivityIndicator/>;
+        }
         return (
             <NavigationContainer>
                 <Modal  visible={this.state.rulesVisible}>
@@ -66,15 +103,31 @@ export default class App extends React.Component {
                     </View>
                 </Modal>
                 <Drawer.Navigator
-                    initialRouteName="Home" drawerContentOptions={{activeTintColor: '#e91e63', }}
+                    initialRouteName="Home"
                     drawerContent={(props) => {
                         return (
                             <DrawerContentScrollView {...props}>
                                 <View style={styles.appNameView}>
                                     <Text style={styles.appNameText}>Quiz App</Text>
                                     <Image style={styles.imageStyle} source={require('./assets/quiz.png')}/>
+                                    {!this.state.isConnected && (<View style={styles.noNetwork}>
+                                        <Text style={styles.textNetwork}>No network</Text>
+                                    </View>)}
                                 </View>
-                                <DrawerItemList {...props} />
+                                <TouchableOpacity style={styles.drawerButtons} onPress={() => this.generateTest(props.navigation)}>
+                                    <Text>Wygeneruj losowy test</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.drawerButtons} onPress={() => this.fetchJson()}>
+                                    <Text>Zaktualizuj testy</Text>
+                                </TouchableOpacity>
+                                <DrawerItem label={"Home"} onPress={() => props.navigation.navigate('Home')}/>
+                                <DrawerItem label={"Result"} onPress={() => props.navigation.navigate('Result')}/>
+                                <Text style={styles.drawerText}>Testy :</Text>
+                                {this.state.quizList.map((item, key) =>
+                                    <DrawerItem label={item.name} onPress={() => props.navigation.navigate('Test', {id: item.id, title: item.name})} key={key}>
+                                        <Text>{item.name + item.id}</Text>
+                                    </DrawerItem>
+                                )}
                             </DrawerContentScrollView>
                         );
                     }}
@@ -124,4 +177,28 @@ const styles = StyleSheet.create({
         marginTop: 20,
         justifyContent: "center",
     },
+
+    drawerButtons: {
+        marginTop: 20,
+        paddingVertical: 20,
+        marginHorizontal: 40,
+        alignItems: 'center',
+        backgroundColor: "lightgrey",
+        borderRadius: 7,
+        borderWidth: 1,
+        fontSize: 16
+    },
+    drawerText: {
+        marginHorizontal: 20,
+        alignSelf: 'center',
+        fontSize: 16
+    },
+    noNetwork: {
+        backgroundColor: "#FFFF00",
+        marginVertical: 10,
+        alignItems: 'center'
+    },
+    textNetwork: {
+        color: '#FF0000'
+    }
 });

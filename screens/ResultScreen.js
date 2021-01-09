@@ -1,30 +1,43 @@
 import React, {Component} from 'react';
-import {StyleSheet, View, FlatList, RefreshControl, ProgressBarAndroid} from 'react-native';
+import {StyleSheet, View, FlatList, RefreshControl, ProgressBarAndroid, Text} from 'react-native';
 import {Table, Row} from 'react-native-table-component';
 import { Toolbar } from '../components/Toolbar';
+import NetInfo from "@react-native-community/netinfo";
 
+let networkStatus
 export default class ResultsScreen extends Component {
-    constructor() {
-        super();
-
-        this.state = {refreshing: false, setRefreshing: false, results: [], isLoading: true}
-    }
-
-    fetchJson = () => {
-        fetch('http://tgryl.pl/quiz/results')
-            .then((response) => response.json())
-            .then((json) => {
-                this.setState({ results: json.reverse()});
-            })
-            .catch((error) => console.error(error))
-            .finally(() => {
-                this.setState({ isLoading: false });
-            });
+    state = {
+        refreshing: false,
+        setRefreshing: false,
+        results: [],
+        isLoading: true,
+        isConnected: false
     }
 
    componentDidMount() {
-        this.fetchJson()
+        this.network = NetInfo.addEventListener(state => {
+           this.setState({isConnected: state.isConnected})
+            networkStatus = state.isConnected
+
+       })
+       console.log(networkStatus)
+       this.fetchJson(networkStatus)
+   }
+
+    fetchJson = (networkStatus) => {
+        if(networkStatus === true){
+            fetch('http://tgryl.pl/quiz/results?last=100')
+                .then((response) => response.json())
+                .then((json) => {
+                    this.setState({results: json.reverse()});
+                })
+                .catch((error) => console.error(error))
+                .finally(() => {
+                    this.setState({isLoading: false});
+                });
+        }
     }
+
 
     wait = (timeout) => {
         return new Promise(resolve => {
@@ -56,20 +69,23 @@ export default class ResultsScreen extends Component {
         return (
             <View style={styles.container} >
                 <Toolbar navigation={() => {this.props.navigation.openDrawer()}} text="Result"/>
-               <View style={{marginBottom: 40, marginHorizontal: 23, flex: 1}}>
+                {!this.state.isConnected && (<View style={styles.noNetwork}>
+                    <Text style={styles.textNetwork}>No network</Text>
+                </View>)}
+                {this.state.isConnected && (<View style={{marginBottom: 40, marginHorizontal: 23, flex: 1}}>
                     <Table borderStyle={{borderWidth: 1, borderColor: '#000'}}>
                         <Row data={['Nick', 'Point', 'Type', 'Date']} style={styles.header} textStyle={[styles.text, {fontFamily: 'roboto-medium'}]}/>
                     </Table>
-                   {isLoading ? <ProgressBarAndroid progress={1}/> :
-                       <Table style={{borderWidth: 1, marginTop: -1}}>
-                        <FlatList data={results}
-                                  renderItem= {this.item}
-                                  keyExtractor={(item, index) => index.toString()}
-                                  refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh}/>}
-                        />
-                    </Table>
-                       }
-                </View>
+                    {isLoading ? <ProgressBarAndroid progress={1}/> :
+                        <Table style={{borderWidth: 1, marginTop: -1}}>
+                            <FlatList data={results}
+                                      renderItem= {this.item}
+                                      keyExtractor={(item, index) => index.toString()}
+                                      refreshControl={<RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh}/>}
+                            />
+                        </Table>
+                    }
+                </View>)}
             </View>
         )
     }
@@ -100,5 +116,13 @@ const styles = StyleSheet.create({
         height: 100,
         backgroundColor: '#F7F8FA',
         borderLeftWidth: 1,
+    },
+    noNetwork: {
+        backgroundColor: "#FFFF00",
+        marginVertical: 10,
+        alignItems: 'center'
+    },
+    textNetwork: {
+        color: '#FF0000'
     }
 });

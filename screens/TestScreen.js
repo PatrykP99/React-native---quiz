@@ -1,6 +1,9 @@
 import React from 'react';
 import {ProgressBarAndroid, StyleSheet, Text, TouchableOpacity, View, TextInput} from 'react-native';
 import {Toolbar} from "../components/Toolbar";
+import _ from 'lodash'
+import NetInfo from "@react-native-community/netinfo";
+import {getData} from "../utils/Storage";
 
 export default class TestScreen extends React.Component {
     state = {
@@ -39,14 +42,18 @@ export default class TestScreen extends React.Component {
                 },
             ],
             duration: 100
-        },]
+        },],
+        isConnected: false,
     }
-
+    network;
 
     componentDidMount() {
+        this.network = NetInfo.addEventListener(state => {
+            this.setState({isConnected: state.isConnected})
+        })
 
         this.setState({ isLoading: true })
-        this.fetchJson()
+        this.getTest().then(() =>{})
         if (this.state.viewVisible) {
             this.taskDisplay()
             this.interval = setInterval(() => this.setState((prevState) => ({
@@ -56,17 +63,35 @@ export default class TestScreen extends React.Component {
         }
     }
 
-    fetchJson = () => {
-        fetch('http://tgryl.pl/quiz/test/' + this.props.route.params.id)
-            .then((response) => response.json())
-            .then((json) => {
-                this.state.tasks = json.tasks
-                this.setState({description: json.description})})
-            .then(() => this.taskDisplay())
-            .catch((error) => console.error(error))
-            .finally(() => {
-                this.setState({ isLoading: false });
-            });
+    getTest = async() => {
+        await getData(this.props.route.params.id).then(r => {
+            r = JSON.parse(r)
+            this.setState({
+                tasks: _.shuffle(r.tasks),
+                description: r.description + 1
+            })
+        })
+            .then(() => {
+                this.taskDisplay()
+            })
+            .then(() => {
+                this.setState({isLoading: false})
+            })
+
+
+        // fetch('http://tgryl.pl/quiz/test/' + this.props.route.params.id)
+        //     .then((response) => response.json())
+        //     .then((json) => {
+        //         this.setState({
+        //             tasks: _.shuffle(json.tasks),
+        //             description: json.description
+        //         })
+        //     })
+        //     .then(() => this.taskDisplay())
+        //     .catch((error) => console.error(error))
+        //     .finally(() => {
+        //         this.setState({ isLoading: false });
+        //     });
     }
 
     componentWillUnmount() {
@@ -88,7 +113,7 @@ export default class TestScreen extends React.Component {
         this.setState({
             task: {
                 questions: tasks[this.state.position].question,
-                answer: tasks[this.state.position].answers
+                answer: _.shuffle(tasks[this.state.position].answers)
             },
             duration: tasks[this.state.position].duration,
             barStatus: 1 / tasks[this.state.position].duration
@@ -144,7 +169,7 @@ export default class TestScreen extends React.Component {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify((data))
-            });
+        });
         navigation.navigate("Home")
     }
 
@@ -155,6 +180,9 @@ export default class TestScreen extends React.Component {
         return (
             <View style={styles.container}>
                 <Toolbar navigation={() => {navigation.openDrawer()}} text={title}/>
+                {!this.state.isConnected && (<View style={styles.noNetwork}>
+                    <Text style={styles.textNetwork}>No network</Text>
+                </View>)}
                 {viewVisible && <View style={{alignContent: 'center'}}>
                     <View style={styles.rowDirect}>
                         <Text style={styles.firstText}>Question {position + 1} of {tasks.length}</Text>
@@ -180,12 +208,26 @@ export default class TestScreen extends React.Component {
                 </View>}
                 {!viewVisible && <View style={{alignItems: 'center', paddingTop: 45}}>
                     <Text style={{fontSize: 30, fontFamily: 'roboto-medium'}}>You scored {points} / {tasks.length} points </Text>
-                    <Text style={{fontSize: 30, marginTop: 20, fontFamily: 'raleway-medium'}}>Share your result!</Text>
-                    <TextInput  style={{height: 40,backgroundColor: 'azure', fontSize: 20, marginTop: 20, fontFamily: 'raleway-medium'}}
-                                placeholder="Enter your nickname" onChangeText={(text) => this.setState({text})}/>
-                    <TouchableOpacity style={styles.backButton} onPress={() => this.postResult()}>
-                        <Text style={{fontSize: 20, textAlign: 'center', fontFamily: 'raleway-medium'}}>Send</Text>
-                    </TouchableOpacity>
+                    {this.state.isConnected && (
+                        <Text style={{fontSize: 30, marginTop: 20, fontFamily: 'raleway-medium'}}>Share your result!</Text>
+                    )}
+                    {this.state.isConnected && (
+                        <TextInput  style={{height: 40,backgroundColor: 'azure', fontSize: 20, marginTop: 20, fontFamily: 'raleway-medium'}}
+                                    placeholder="Enter your nickname" onChangeText={(text) => this.setState({text})}/>
+                    )}
+                    {this.state.isConnected && (
+                        <TouchableOpacity style={styles.backButton} onPress={() => this.postResult()}>
+                            <Text style={{fontSize: 20, textAlign: 'center', fontFamily: 'raleway-medium'}}>Send</Text>
+                        </TouchableOpacity>
+                    )}
+                    {!this.state.isConnected && (
+                        <Text style={{fontSize: 30, marginTop: 20, fontFamily: 'raleway-medium'}}>No network</Text>
+                    )}
+                    {!this.state.isConnected && (
+                        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Home")}>
+                            <Text style={{fontSize: 20, textAlign: 'center', fontFamily: 'raleway-medium'}}>Go back</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>}
             </View>
         )
@@ -251,11 +293,19 @@ const styles = StyleSheet.create({
     },
     backButton: {
         backgroundColor: "lightgrey",
-        width: 100,
-        height: 50,
         borderRadius: 7,
         padding: 10,
         marginTop: 20,
         justifyContent: "center",
     },
+    noNetwork: {
+        backgroundColor: "#FFFF00",
+        marginBottom: 20,
+        paddingTop:10,
+        alignItems: 'center',
+    },
+    textNetwork: {
+        color: '#FF0000',
+        paddingBottom:10,
+    }
 });
