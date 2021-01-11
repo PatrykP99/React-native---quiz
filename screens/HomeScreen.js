@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, RefreshControl } from 'react-native';
 import { Toolbar } from "../components/Toolbar";
 import { TestShortcutTemplate } from "../components/TestShortcutTemplate";
 import _ from 'lodash'
@@ -11,25 +11,16 @@ export default class HomeScreen extends React.Component {
         tests: [],
         isLoading: true,
         assetsLoaded: false,
-        isConnected: false
+        isConnected: false,
+        refreshing: false,
     }
     network;
 
-    // fetchJson = () => {
-    //
-    //     fetch('http://tgryl.pl/quiz/tests')
-    //         .then((response) => response.json())
-    //         .then((json) => {
-    //             this.setState({ tests: _.shuffle(json) });
-    //             storeData(JSON.stringify(json), "tests").then(r => {})
-    //         })
-    //         .catch((error) => console.error(error))
-    //         .finally(() => {
-    //             this.setState({ isLoading: false });
-    //         });
-    // }
-
     componentDidMount() {
+        this.componentDidMountHolder()
+    }
+
+    componentDidMountHolder(){
         this.network = NetInfo.addEventListener(state => {
             this.setState({isConnected: state.isConnected})
         })
@@ -37,6 +28,19 @@ export default class HomeScreen extends React.Component {
         getData("tests").then(r => {
             this.setState({tests: _.shuffle(JSON.parse(r))})
         })
+    }
+
+    onRefresh = () => {
+        this.setState({setRefreshing: true})
+        this.wait(500).then(() =>{
+            this.componentDidMountHolder()
+            this.setState({setRefreshing: false})})
+    }
+
+    wait = (timeout) => {
+        return new Promise(resolve => {
+            setTimeout(resolve, timeout);
+        });
     }
 
     render() {
@@ -47,7 +51,8 @@ export default class HomeScreen extends React.Component {
                 {!this.state.isConnected && (<View style={styles.noNetwork}>
                     <Text style={styles.textNetwork}>No network</Text>
                 </View>)}
-                <ScrollView>
+                <ScrollView refreshControl={
+                    <RefreshControl refreshing={this.state.refreshing} onRefresh={this.onRefresh} />}>
                     <View>
                         {tests.map((item, key) =>
                             <TestShortcutTemplate navigation={() => {this.props.navigation.navigate('Test', {id: item.id, title: item.name})}} titleText={item.name}
@@ -96,11 +101,9 @@ const styles = StyleSheet.create({
     noNetwork: {
         backgroundColor: "#FFFF00",
         marginBottom: 20,
-        paddingTop:10,
         alignItems: 'center',
     },
     textNetwork: {
         color: '#FF0000',
-        paddingBottom:10,
     }
 });

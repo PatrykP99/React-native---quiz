@@ -68,7 +68,7 @@ export default class TestScreen extends React.Component {
             r = JSON.parse(r)
             this.setState({
                 tasks: _.shuffle(r.tasks),
-                description: r.description + 1
+                description: r.description
             })
         })
             .then(() => {
@@ -77,21 +77,6 @@ export default class TestScreen extends React.Component {
             .then(() => {
                 this.setState({isLoading: false})
             })
-
-
-        // fetch('http://tgryl.pl/quiz/test/' + this.props.route.params.id)
-        //     .then((response) => response.json())
-        //     .then((json) => {
-        //         this.setState({
-        //             tasks: _.shuffle(json.tasks),
-        //             description: json.description
-        //         })
-        //     })
-        //     .then(() => this.taskDisplay())
-        //     .catch((error) => console.error(error))
-        //     .finally(() => {
-        //         this.setState({ isLoading: false });
-        //     });
     }
 
     componentWillUnmount() {
@@ -183,7 +168,7 @@ export default class TestScreen extends React.Component {
                 {!this.state.isConnected && (<View style={styles.noNetwork}>
                     <Text style={styles.textNetwork}>No network</Text>
                 </View>)}
-                {viewVisible && <View style={{alignContent: 'center'}}>
+                {viewVisible && <View style={{marginTop: 20, alignContent: 'center'}}>
                     <View style={styles.rowDirect}>
                         <Text style={styles.firstText}>Question {position + 1} of {tasks.length}</Text>
                         <Text style={styles.firstText}>Time: {duration} sec</Text>
@@ -206,7 +191,7 @@ export default class TestScreen extends React.Component {
                         </View>
                     </View>
                 </View>}
-                {!viewVisible && <View style={{alignItems: 'center', paddingTop: 45}}>
+                {!viewVisible && <View style={{marginTop: 160,alignItems: 'center'}}>
                     <Text style={{fontSize: 30, fontFamily: 'roboto-medium'}}>You scored {points} / {tasks.length} points </Text>
                     {this.state.isConnected && (
                         <Text style={{fontSize: 30, marginTop: 20, fontFamily: 'raleway-medium'}}>Share your result!</Text>
@@ -251,43 +236,40 @@ const styles = StyleSheet.create({
         fontFamily: 'roboto-medium'
     },
     progressBar: {
-        margin: 20
+        marginVertical: 5,
+        marginHorizontal: 20
     },
     questionText: {
-        fontSize: 27,
+        fontSize: 20,
         textAlign: 'center',
         fontFamily: 'roboto-medium',
     },
     descriptionText: {
         textAlign: 'center',
-        marginTop: 35,
+        marginTop: 20,
         marginHorizontal: 20,
-        fontSize: 13,
+        fontSize: 12,
         fontFamily: 'raleway-medium'
     },
     answersView: {
-        marginVertical: 35,
+        marginTop: 15,
         marginHorizontal: 20,
         paddingVertical: 15,
         paddingHorizontal: 20,
         justifyContent: 'space-evenly',
-        borderWidth: 2,
-        backgroundColor: '#E8E8E8',
     },
     answerText: {
-        fontSize: 12,
+        fontSize: 13,
         textAlign: 'center',
         fontFamily: 'raleway-medium',
     },
     answerTouchable: {
         borderWidth: 1,
-        paddingHorizontal: 40,
-        paddingVertical: 12,
-        marginBottom: 20,
+        margin: 10,
         backgroundColor: "lightgrey",
         borderRadius: 7,
-        width: 140,
-        height: 50,
+        width: 143,
+        height: 80,
         justifyContent: 'center',
         alignItems: 'center'
     },
@@ -300,12 +282,10 @@ const styles = StyleSheet.create({
     },
     noNetwork: {
         backgroundColor: "#FFFF00",
-        marginBottom: 20,
-        paddingTop:10,
+        marginBottom: 10,
         alignItems: 'center',
     },
     textNetwork: {
         color: '#FF0000',
-        paddingBottom:10,
     }
 });

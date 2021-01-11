@@ -15,16 +15,16 @@ const Toolbar = (props) => {
 
 const styles = StyleSheet.create({
     toolbarView:{
-        paddingVertical: 20,
         flexDirection: 'row',
         justifyContent:'space-between',
-        marginBottom: 50,
         backgroundColor: '#E8E8E8',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        height: 100
     },
     toolbarText:{
-        fontSize: 30,
-        paddingVertical: 20,
+        fontSize: 27,
+        marginTop: 25,
+        // paddingVertical: 20,
         width: 1,
         flexGrow: 1,
         fontFamily: 'roboto-medium',
@@ -32,10 +32,10 @@ const styles = StyleSheet.create({
     },
     toolbarButton:{
         fontSize:24,
-        height: 50,
-        width: 50,
-        marginTop: 25,
-        marginLeft: 20,
+        height: 40,
+        width: 45,
+        marginTop: 30,
+        marginLeft: 10,
     },
     imageStyle: {
         height: 50,

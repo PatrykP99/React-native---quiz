@@ -20,7 +20,6 @@ export default class ResultsScreen extends Component {
             networkStatus = state.isConnected
 
        })
-       console.log(networkStatus)
        this.fetchJson(networkStatus)
    }
 
@@ -72,7 +71,7 @@ export default class ResultsScreen extends Component {
                 {!this.state.isConnected && (<View style={styles.noNetwork}>
                     <Text style={styles.textNetwork}>No network</Text>
                 </View>)}
-                {this.state.isConnected && (<View style={{marginBottom: 40, marginHorizontal: 23, flex: 1}}>
+                {this.state.isConnected && (<View style={{marginTop: 40, marginHorizontal: 23, flex: 1}}>
                     <Table borderStyle={{borderWidth: 1, borderColor: '#000'}}>
                         <Row data={['Nick', 'Point', 'Type', 'Date']} style={styles.header} textStyle={[styles.text, {fontFamily: 'roboto-medium'}]}/>
                     </Table>
@@ -96,7 +95,10 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
-    head: {height: 40, backgroundColor: '#f1f8ff'},
+    head: {
+        height: 40,
+        backgroundColor: '#f1f8ff'
+    },
     header: {
         height: 50,
         backgroundColor: 'lightgray',
@@ -119,7 +121,6 @@ const styles = StyleSheet.create({
     },
     noNetwork: {
         backgroundColor: "#FFFF00",
-        marginVertical: 10,
         alignItems: 'center'
     },
     textNetwork: {

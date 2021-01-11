@@ -15,9 +15,8 @@ const TestShortcutTemplate = (props) => {
 const styles = StyleSheet.create({
     testView:{
         borderWidth: 1,
-        marginBottom: 50,
-        marginStart: 20,
-        marginEnd: 20
+        marginVertical: 20,
+        marginHorizontal: 20
     },
     titleText:{
         fontSize: 30,

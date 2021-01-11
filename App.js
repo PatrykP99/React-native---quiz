@@ -11,6 +11,7 @@ import {getData, storeData} from "./utils/Storage";
 import NetInfo from "@react-native-community/netinfo";
 
 const Drawer = createDrawerNavigator();
+let networkStatus
 
 export default class App extends React.Component {
     state = {
@@ -29,25 +30,53 @@ export default class App extends React.Component {
             this.setState({assetsLoaded: true});
         })
 
-        this.network = NetInfo.addEventListener(state => {
-            this.setState({isConnected: state.isConnected})
-        })
-
-        getData("tests").then(r => {
-            this.setState({quizList: JSON.parse(r)})
-        })
-
         getData("rules").then(r => {
             if (r !== 'cdda') {
                 this.setState({rulesVisible: true})
             }
         })
+
+        this.network = NetInfo.addEventListener(state => {
+            this.setState({isConnected: state.isConnected})
+            networkStatus = state.isConnected
+        })
+
+        this.fetchDate()
+
+        getData("tests").then(r => {
+            this.setState({quizList: JSON.parse(r)})
+        })
+    }
+
+    fetchDate = () => {
+        let currentDate = new Date()
+        getData("updateDate").then(r => {
+            if (r !== currentDate.getDay() + ":" + currentDate.getMonth() + ":" + currentDate.getFullYear()) {
+                let ids = []
+                fetch('http://tgryl.pl/quiz/tests')
+                    .then((response) => response.json())
+                    .then((json) => {
+                        storeData(JSON.stringify(json), "tests").then(r => {
+                            this.setState({quizList: _.shuffle(json)})
+                        })
+                        ids = this.state.quizList.map((item) => item.id)
+                    })
+                    .then(() => {
+                        this.fetchSimpleTest(ids)
+                    })
+                    .then(() => {
+                        storeData(currentDate.getDay() + ":" + currentDate.getMonth() + ":" + currentDate.getFullYear(),"updateDate").then(r => {
+                        })
+                    })
+                    .catch((error) => console.error(error))
+            }
+        })
     }
 
     fetchJson = () => {
-        let ids = []
         const { isConnected, quizList } = this.state;
         if(isConnected === true) {
+            let ids = []
             fetch('http://tgryl.pl/quiz/tests')
                 .then((response) => response.json())
                 .then((json) => {
@@ -195,7 +224,8 @@ const styles = StyleSheet.create({
     },
     noNetwork: {
         backgroundColor: "#FFFF00",
-        marginVertical: 10,
+        paddingHorizontal: 104,
+        marginVertical: 20,
         alignItems: 'center'
     },
     textNetwork: {
