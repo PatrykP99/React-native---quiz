@@ -52,10 +52,9 @@ export default class TestScreen extends React.Component {
             this.setState({isConnected: state.isConnected})
         })
 
-        this.setState({ isLoading: true })
         this.getTest().then(() =>{})
         if (this.state.viewVisible) {
-            this.taskDisplay()
+            //this.taskDisplay()
             this.interval = setInterval(() => this.setState((prevState) => ({
                 duration: prevState.duration - 1,
                 bar: prevState.bar - this.state.barStatus
@@ -74,9 +73,6 @@ export default class TestScreen extends React.Component {
             .then(() => {
                 this.taskDisplay()
             })
-            .then(() => {
-                this.setState({isLoading: false})
-            })
     }
 
     componentWillUnmount() {
@@ -86,7 +82,8 @@ export default class TestScreen extends React.Component {
     componentDidUpdate() {
         if (this.state.viewVisible) {
             if (this.state.duration === 0) {
-                this.questionHandler(1).then(r => {
+                this.questionHandler(5)
+                    .then(r => {
                     this.taskDisplay()
                 })
             }
@@ -95,14 +92,16 @@ export default class TestScreen extends React.Component {
 
     taskDisplay = () => {
         const {tasks} = this.state
-        this.setState({
-            task: {
-                questions: tasks[this.state.position].question,
-                answer: _.shuffle(tasks[this.state.position].answers)
-            },
-            duration: tasks[this.state.position].duration,
-            barStatus: 1 / tasks[this.state.position].duration
-        })
+        if(this.state.viewVisible){
+            this.setState({
+                task: {
+                    questions: tasks[this.state.position].question,
+                    answer: _.shuffle(tasks[this.state.position].answers)
+                },
+                duration: tasks[this.state.position].duration,
+                barStatus: 1 / tasks[this.state.position].duration
+            })
+        }
     }
 
     keyHandler = (key) => {
@@ -154,7 +153,7 @@ export default class TestScreen extends React.Component {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify((data))
-        });
+        })
         navigation.navigate("Home")
     }
 

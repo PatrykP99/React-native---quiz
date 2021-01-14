@@ -11,14 +11,12 @@ import {getData, storeData} from "./utils/Storage";
 import NetInfo from "@react-native-community/netinfo";
 
 const Drawer = createDrawerNavigator();
-let networkStatus
 
 export default class App extends React.Component {
     state = {
         rulesVisible: false,
         assetsLoaded: false,
         quizList: [],
-        testIds: []
     }
     network;
 
@@ -38,13 +36,12 @@ export default class App extends React.Component {
 
         this.network = NetInfo.addEventListener(state => {
             this.setState({isConnected: state.isConnected})
-            networkStatus = state.isConnected
         })
 
         this.fetchDate()
 
         getData("tests").then(r => {
-            this.setState({quizList: JSON.parse(r)})
+            this.setState({quizList: _.shuffle(JSON.parse(r))})
         })
     }
 
